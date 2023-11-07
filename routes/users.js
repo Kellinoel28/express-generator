@@ -5,9 +5,14 @@ const authenticate = require('../authenticate');
 
 const router = express.Router();
 
-/* GET users listing. */
-router.get('/', function (req, res, next) {
-    res.send('respond with a resource');
+router.get('/', authenticate.verifyUser, authenticate.verifyAdmin, (req, res, next) => {
+    User.find({})
+        .then((users) => {
+            res.statusCode = 200;
+            res.setHeader('Content-Type', 'application/json');
+            res.json(users);
+        })
+        .catch((err) => next(err));
 });
 
 router.post('/signup', (req, res) => {
@@ -60,20 +65,6 @@ router.get('/logout', (req, res, next) => {
     }
 });
 
-router.get('/users', (req, res, next) => {
-    if (req.user.admin) {
-        Users.find()
-            .then(users => {
-                res.statusCode = 200;
-                res.setHeader('Content-Type', 'application/json');
-                res.json(users);
-            })
-    } else {
-        const err = new Error('You are not authorized!');
-        err.status = 403;
-        return next(err);
-    }
 
-})
 
 module.exports = router;
