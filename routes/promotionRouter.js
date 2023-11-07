@@ -1,8 +1,11 @@
 const express = require('express');
-const Promotion = require('../models/promotion')
+const bodyParser = require('body-parser');
+const Promotion = require('../models/promotion');
 const authenticate = require('../authenticate');
 
 const promotionsRouter = express.Router();
+
+promotionsRouter.use(bodyParser.json());
 
 promotionsRouter.route('/')
 .get((req, res, next) => {
@@ -14,7 +17,7 @@ promotionsRouter.route('/')
     })
     .catch(err => next(err));
 })
-.post(authenticate.verifyUser, (req, res, next) => {
+.post(authenticate.verifyUser, authenticate.verifyAdmin, (req, res, next) => {
     Promotion.create(req.body)
     .then(promotion => {
         console.log('Promotion Created', promotion);
@@ -28,7 +31,7 @@ promotionsRouter.route('/')
     res.statusCode = 403;
     res.end('PUT operation not supported on /promotions');
 })
-.delete(authenticate.verifyUser, (req, res, next) => {
+.delete(authenticate.verifyUser, authenticate.verifyAdmin, (req, res, next) => {
     Promotion.deleteMany()
     .then(response => {
         res.statusCode = 200;
@@ -49,10 +52,9 @@ promotionsRouter.route('/:promotionId')
     .catch(err => next(err));
 })
 .post(authenticate.verifyUser, (req, res, next) => {
-    res.statusCode = 403
-        res.end(`POST operation not supported on /promotions/${req.params.promotionId}`)
-})        
-.put(authenticate.verifyUser, (req, res) => {
+    res.end(`Will add the promotion: ${req.body.name} with description: ${req.body.description}`);
+})
+.put(authenticate.verifyUser, authenticate.verifyAdmin, (req, res, next) => {
     Promotion.findByIdAndUpdate(req.params.promotionId, {
         $set: req.body
     }, { new: true })
@@ -63,7 +65,7 @@ promotionsRouter.route('/:promotionId')
     })
     .catch(err => next(err));
 })
-.delete(authenticate.verifyUser, (req, res, next) => {
+.delete(authenticate.verifyUser, authenticate.verifyAdmin, (req, res, next) => {
     Promotion.findByIdAndDelete(req.params.promotionId)
     .then(response => {
         res.statusCode = 200;

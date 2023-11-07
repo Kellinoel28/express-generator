@@ -11,14 +11,12 @@ router.get('/', function (req, res, next) {
 });
 
 router.post('/signup', (req, res) => {
-    User.register(
-        new User({username: req.body.username}),
-        req.body.password,
-        (err, user) => {
+    User.register(new User({ username: req.body.username }),
+        req.body.password, (err, user) => {
             if (err) {
                 res.statusCode = 500;
                 res.setHeader('Content-Type', 'application/json');
-                res.json({err: err});
+                res.json({ err: err });
             } else {
                 if (req.body.firstname) {
                     user.firstname = req.body.firstname;
@@ -30,25 +28,24 @@ router.post('/signup', (req, res) => {
                     if (err) {
                         res.statusCode = 500;
                         res.setHeader('Content-Type', 'application/json');
-                        res.json({err: err});
+                        res.json({ err: err });
                         return;
                     }
                     passport.authenticate('local')(req, res, () => {
                         res.statusCode = 200;
                         res.setHeader('Content-Type', 'application/json');
-                        res.json({success: true, status: 'Registration Successful!'});
+                        res.json({ success: true, status: 'Registration Successful!' });
                     });
                 });
             }
-        }
-    );
+        });
 });
 
 router.post('/login', passport.authenticate('local'), (req, res) => {
-    const token = authenticate.getToken({_id: req.user._id});
+    const token = authenticate.getToken({ _id: req.user._id });
     res.statusCode = 200;
     res.setHeader('Content-Type', 'application/json');
-    res.json({success: true, token: token, status: 'You are successfully logged in!'});
+    res.json({ success: true, token: token, status: 'You are successfully logged in!' });
 });
 
 router.get('/logout', (req, res, next) => {
@@ -58,9 +55,25 @@ router.get('/logout', (req, res, next) => {
         res.redirect('/');
     } else {
         const err = new Error('You are not logged in!');
-        err.status = 401;
+        err.status = 403;
         return next(err);
     }
 });
+
+router.get('/users', (req, res, next) => {
+    if (req.user.admin) {
+        Users.find()
+            .then(users => {
+                res.statusCode = 200;
+                res.setHeader('Content-Type', 'application/json');
+                res.json(users);
+            })
+    } else {
+        const err = new Error('You are not authorized!');
+        err.status = 403;
+        return next(err);
+    }
+
+})
 
 module.exports = router;
